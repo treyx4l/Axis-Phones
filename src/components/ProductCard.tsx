@@ -7,6 +7,8 @@ import {
   Box,
   Chip,
   Grow,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { Product } from '../types'
@@ -20,11 +22,21 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) => {
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const minPrice = Math.min(...product.storageOptions.map((s) => s.price))
   const maxPrice = Math.max(...product.storageOptions.map((s) => s.price))
   const priceRange = minPrice === maxPrice 
     ? formatCurrency(minPrice) 
     : `${formatCurrency(minPrice)} - ${formatCurrency(maxPrice)}`
+  
+  // Truncate description: 60 chars on mobile, 100 chars on larger screens
+  const maxDescriptionLength = isMobile ? 60 : 100
+  const truncatedDescription = product.description 
+    ? (product.description.length > maxDescriptionLength
+        ? product.description.substring(0, maxDescriptionLength) + '...'
+        : product.description)
+    : ''
 
   return (
     <Grow in timeout={300 + (index * 50)}>
@@ -125,11 +137,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) 
               },
             }}
             dangerouslySetInnerHTML={{ 
-              __html: product.description 
-                ? (product.description.length > 100 
-                    ? product.description.substring(0, 100) + '...'
-                    : product.description)
-                : '' 
+              __html: truncatedDescription
             }}
           />
           <Box sx={{ mb: { xs: 1, sm: 2 }, display: 'flex', gap: { xs: 0.5, sm: 1 }, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -137,8 +145,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) 
               <Box
                 key={color.name}
                 sx={{
-                  width: { xs: 28, sm: 36, md: 40 },
-                  height: { xs: 28, sm: 36, md: 40 },
+                  width: { xs: 20, sm: 36, md: 40 },
+                  height: { xs: 20, sm: 36, md: 40 },
                   flexShrink: 0,
                 }}
               >

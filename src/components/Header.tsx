@@ -59,24 +59,44 @@ export const Header: React.FC = () => {
 
   return (
     <AppBar position="sticky" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
-      <Toolbar>
+      <Toolbar sx={{ 
+        flexWrap: { xs: 'nowrap', sm: 'nowrap' },
+        overflow: { xs: 'auto', sm: 'visible' },
+        minHeight: { xs: 56, sm: 64 },
+      }}>
         <Typography
           variant="h6"
           component="div"
-          sx={{ flexGrow: 0, mr: 3, cursor: 'pointer', fontWeight: 'bold' }}
+          sx={{ 
+            flexGrow: 0, 
+            mr: { xs: 1, sm: 3 }, 
+            cursor: 'pointer', 
+            fontWeight: 'bold',
+            fontSize: { xs: '1rem', sm: '1.25rem' },
+            flexShrink: 0,
+          }}
           onClick={() => navigate('/')}
         >
           AxisPhones
         </Typography>
 
-        <SearchBar />
+        <Box sx={{ 
+          display: { xs: 'none', sm: 'block' },
+          flexGrow: { sm: 1 },
+          minWidth: { sm: 200 },
+        }}>
+          <SearchBar />
+        </Box>
 
-        <Box sx={{ flexGrow: 1 }} />
+        <Box sx={{ flexGrow: { xs: 1, sm: 0 } }} />
 
         <IconButton
           color="inherit"
           onClick={toggleTheme}
-          sx={{ mr: 1 }}
+          sx={{ 
+            mr: { xs: 0.5, sm: 1 },
+            flexShrink: 0,
+          }}
           title={mode === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
         >
           {mode === 'light' ? <DarkMode /> : <LightMode />}
@@ -86,12 +106,15 @@ export const Header: React.FC = () => {
           <>
             <IconButton
               onClick={handleMenuOpen}
-              sx={{ mr: 1 }}
+              sx={{ 
+                mr: { xs: 0.5, sm: 1 },
+                flexShrink: 0,
+              }}
               title="Account Menu"
             >
               <Avatar
                 src={userProfile?.photoURL || undefined}
-                sx={{ width: 32, height: 32 }}
+                sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 } }}
               >
                 {userProfile?.displayName?.[0]?.toUpperCase() || 'U'}
               </Avatar>
@@ -124,7 +147,11 @@ export const Header: React.FC = () => {
               color="inherit"
               onClick={handleLogin}
               sx={{ 
-                mr: 1,
+                mr: { xs: 0.5, sm: 1 },
+                flexShrink: 0,
+                fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                px: { xs: 0.75, sm: 2 },
+                minWidth: { xs: 'auto', sm: 64 },
                 transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-2px)',
@@ -138,7 +165,11 @@ export const Header: React.FC = () => {
               color="inherit"
               onClick={handleLogin}
               sx={{ 
-                mr: 1,
+                mr: { xs: 0.5, sm: 1 },
+                flexShrink: 0,
+                fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                px: { xs: 0.75, sm: 2 },
+                minWidth: { xs: 'auto', sm: 64 },
                 transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-2px)',
@@ -155,6 +186,8 @@ export const Header: React.FC = () => {
           color="inherit" 
           onClick={() => navigate('/cart')}
           sx={{
+            flexShrink: 0,
+            ml: { xs: 0.5, sm: 0 },
             transition: 'all 0.3s ease',
             '&:hover': {
               transform: 'scale(1.1) rotate(5deg)',

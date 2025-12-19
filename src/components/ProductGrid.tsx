@@ -12,7 +12,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     <Fade in timeout={600}>
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         {products.map((product, index) => (
-          <Grid item xs={4} sm={3} md={3} lg={3} key={product.id}>
+          <Grid item xs={6} sm={3} md={3} lg={3} key={product.id}>
             <ProductCard product={product} index={index} />
           </Grid>
         ))}
