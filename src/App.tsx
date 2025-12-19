@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Link as RouterLink } from 'react-router-dom'
 import { ThemeProvider } from './theme/ThemeProvider'
 import { CartProvider } from './context/CartContext'

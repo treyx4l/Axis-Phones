@@ -3,17 +3,16 @@ import {
   ref, 
   get, 
   set, 
-  push, 
-  remove,
   onValue,
   off,
-  query,
-  orderByChild,
-  equalTo
 } from 'firebase/database'
 import { useAuth } from './AuthContext'
 import { Order } from '../types'
 import { db } from '../FirebaseConfig'
+import type { Database } from 'firebase/database'
+
+// Type assertion for Firebase instance
+const typedDb: Database | null = db
 
 interface OrdersContextType {
   orders: Order[]
@@ -33,16 +32,16 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // Load orders from Realtime Database when user changes
   useEffect(() => {
-    if (!user || !db) {
+    if (!user || !typedDb) {
       setOrders([])
       setLoading(false)
       return
     }
 
-    const ordersRef = ref(db, 'orders')
+    const ordersRef = ref(typedDb, 'orders')
     
     // Set up real-time listener for user's orders
-    const unsubscribe = onValue(ordersRef, (snapshot) => {
+    onValue(ordersRef, (snapshot) => {
       const data = snapshot.val()
       const loadedOrders: Order[] = []
       
@@ -85,12 +84,11 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       throw new Error('User not logged in. Please sign in to complete your order.')
     }
     
-    if (!db) {
+    if (!typedDb) {
       throw new Error('Realtime Database not initialized. Please check your Firebase configuration.')
     }
 
     try {
-      const ordersRef = ref(db, 'orders')
       const { id, ...orderData } = order
       
       // Prepare order data with all required fields
@@ -111,7 +109,7 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       })
       
       // Use the reference as the key to ensure uniqueness and easy lookup
-      const orderRef = ref(db, `orders/${order.reference || order.id}`)
+      const orderRef = ref(typedDb, `orders/${order.reference || order.id}`)
       await set(orderRef, orderToSave)
       
       console.log('Order saved successfully with reference:', order.reference || order.id)
@@ -146,12 +144,12 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
     
     // If not found locally, try to fetch from database
-    if (!db) {
+    if (!typedDb) {
       return undefined
     }
     
     try {
-      const orderRef = ref(db, `orders/${id}`)
+      const orderRef = ref(typedDb, `orders/${id}`)
       const snapshot = await get(orderRef)
       
       if (snapshot.exists()) {
@@ -163,7 +161,7 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
       
       // If not found by ID, search all orders by reference
-      const ordersRef = ref(db, 'orders')
+      const ordersRef = ref(typedDb, 'orders')
       const allOrdersSnapshot = await get(ordersRef)
       
       if (allOrdersSnapshot.exists()) {
@@ -186,12 +184,12 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }
 
   const getAllOrders = async (): Promise<Order[]> => {
-    if (!db) {
+    if (!typedDb) {
       throw new Error('Realtime Database not initialized')
     }
 
     try {
-      const ordersRef = ref(db, 'orders')
+      const ordersRef = ref(typedDb, 'orders')
       const snapshot = await get(ordersRef)
       const data = snapshot.val()
       
@@ -220,12 +218,12 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }
 
   const updateOrderStatus = async (orderId: string, status: string) => {
-    if (!db) {
+    if (!typedDb) {
       throw new Error('Realtime Database not initialized')
     }
 
     try {
-      const orderRef = ref(db, `orders/${orderId}`)
+      const orderRef = ref(typedDb, `orders/${orderId}`)
       
       // Get current order data
       const snapshot = await get(orderRef)

@@ -1,7 +1,6 @@
 import React from 'react'
-import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Container, Alert, Box, Typography, Button } from '@mui/material'
+import { Container, Alert, Typography, Button } from '@mui/material'
 import { Login } from '@mui/icons-material'
 import { SignInDialog } from './SignInDialog'
 

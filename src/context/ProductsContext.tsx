@@ -7,12 +7,13 @@ import {
   remove, 
   onValue, 
   off,
-  query,
-  orderByChild,
-  equalTo
 } from 'firebase/database'
 import { Product } from '../types'
 import { db } from '../FirebaseConfig'
+import type { Database } from 'firebase/database'
+
+// Type assertion for Firebase instance
+const typedDb: Database | null = db
 
 interface ProductsContextType {
   products: Product[]
@@ -30,20 +31,19 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
-  const loadProducts = async () => {
-    if (!db) {
-      console.warn('Realtime Database not initialized - db is null')
-      setLoading(false)
-      return
-    }
+  // Load products from Realtime Database on mount
+  useEffect(() => {
+    const setupListener = async () => {
+      if (!typedDb) {
+        setLoading(false)
+        return
+      }
 
-    setLoading(true)
-    try {
-      console.log('Loading products from Realtime Database...')
-      const productsRef = ref(db, 'products')
-      
-      // Set up real-time listener
-      const unsubscribe = onValue(productsRef, (snapshot) => {
+      try {
+        const productsRef = ref(typedDb, 'products')
+        
+        // Set up real-time listener
+        onValue(productsRef, (snapshot) => {
         const data = snapshot.val()
         const loadedProducts: Product[] = []
         
@@ -66,57 +66,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
         console.error('Error loading products:', error)
         setLoading(false)
       })
-
-      // Return cleanup function
-      return () => {
-        off(productsRef)
-      }
-    } catch (error: any) {
-      console.error('Error loading products:', error)
-      console.error('Error code:', error?.code)
-      console.error('Error message:', error?.message)
-      setLoading(false)
-    }
-  }
-
-  // Load products from Realtime Database on mount
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined
-
-    const setupListener = async () => {
-      if (!db) {
-        setLoading(false)
-        return
-      }
-
-      try {
-        const productsRef = ref(db, 'products')
-        
-        // Set up real-time listener
-        onValue(productsRef, (snapshot) => {
-          const data = snapshot.val()
-          const loadedProducts: Product[] = []
-          
-          if (data) {
-            Object.keys(data).forEach((key) => {
-              loadedProducts.push({
-                id: key,
-                ...data[key],
-              } as Product)
-            })
-            
-            // Sort by model name
-            loadedProducts.sort((a, b) => a.model.localeCompare(b.model))
-          }
-          
-          console.log(`Loaded ${loadedProducts.length} products from Realtime Database`)
-          setProducts(loadedProducts)
-          setLoading(false)
-        }, (error) => {
-          console.error('Error loading products:', error)
-          setLoading(false)
-        })
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error setting up products listener:', error)
         setLoading(false)
       }
@@ -126,22 +76,22 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     // Cleanup listener on unmount
     return () => {
-      if (db) {
-        const productsRef = ref(db, 'products')
+      if (typedDb) {
+        const productsRef = ref(typedDb, 'products')
         off(productsRef)
       }
     }
   }, [])
 
   const reloadProducts = async () => {
-    if (!db) {
+    if (!typedDb) {
       console.warn('Realtime Database not initialized')
       return
     }
 
     setLoading(true)
     try {
-      const productsRef = ref(db, 'products')
+      const productsRef = ref(typedDb, 'products')
       const snapshot = await get(productsRef)
       const data = snapshot.val()
       const loadedProducts: Product[] = []
@@ -167,14 +117,14 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
   }
 
   const addProduct = async (product: Product) => {
-    if (!db) {
+    if (!typedDb) {
       console.error('Realtime Database db is not initialized')
       throw new Error('Realtime Database not initialized. Please check your Firebase configuration.')
     }
 
     try {
       console.log('Preparing to add product to Realtime Database:', product)
-      const productsRef = ref(db, 'products')
+      const productsRef = ref(typedDb, 'products')
       const { id, ...productData } = product
       
       // Ensure all required fields are present
@@ -221,12 +171,12 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
   }
 
   const updateProduct = async (id: string, product: Product) => {
-    if (!db) {
+    if (!typedDb) {
       throw new Error('Realtime Database not initialized')
     }
 
     try {
-      const productRef = ref(db, `products/${id}`)
+      const productRef = ref(typedDb, `products/${id}`)
       const { id: _, ...productData } = product
       
       await set(productRef, {
@@ -244,12 +194,12 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
   }
 
   const deleteProduct = async (id: string) => {
-    if (!db) {
+    if (!typedDb) {
       throw new Error('Realtime Database not initialized')
     }
 
     try {
-      const productRef = ref(db, `products/${id}`)
+      const productRef = ref(typedDb, `products/${id}`)
       await remove(productRef)
       
       // Update local state

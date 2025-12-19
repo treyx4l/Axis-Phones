@@ -24,14 +24,14 @@ import { useOrders } from '../context/OrdersContext'
 import { formatCurrency } from '../utils/currency'
 import { Order } from '../types'
 
-const getOrderStatus = (order: Order): { label: string; color: 'default' | 'primary' | 'success' | 'warning' | 'error'; icon: React.ReactNode } => {
+const getOrderStatus = (order: Order): { label: string; color: 'default' | 'primary' | 'success' | 'warning' | 'error'; icon: React.ReactElement } => {
   const status = order.status || 'pending'
   
   switch (status) {
     case 'pending':
       return { label: 'Pending', color: 'warning', icon: <Schedule /> }
     case 'processing':
-      return { label: 'Processing', color: 'info', icon: <Schedule /> }
+      return { label: 'Processing', color: 'default', icon: <Schedule /> }
     case 'shipped':
       return { label: 'Shipped', color: 'primary', icon: <LocalShipping /> }
     case 'delivered':
@@ -139,6 +139,7 @@ export const Orders: React.FC = () => {
                       label={status.label}
                       color={status.color}
                       size="small"
+                      sx={{ '& .MuiChip-icon': { color: 'inherit' } }}
                     />
                   </Box>
 

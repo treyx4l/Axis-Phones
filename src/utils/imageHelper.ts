@@ -2,7 +2,7 @@
  * Generate image URL for iPhone model and color
  * In production, this would map to actual product images
  */
-export const getProductImageUrl = (model: string, colorName: string): string => {
+export const getProductImageUrl = (_model: string, _colorName: string): string => {
   // Base URL for placeholder images - replace with your actual image hosting
   const baseUrl = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500'
   

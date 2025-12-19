@@ -7,8 +7,6 @@ import {
   Paper,
   Grid,
   IconButton,
-  Divider,
-  Alert,
 } from '@mui/material'
 import { Delete, ShoppingCart } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'

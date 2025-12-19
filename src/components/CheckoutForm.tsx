@@ -16,6 +16,10 @@ import { validateEmail, validatePhone } from '../utils/validators'
 import { useAuth } from '../context/AuthContext'
 import { ref, get } from 'firebase/database'
 import { db } from '../FirebaseConfig'
+import type { Database } from 'firebase/database'
+
+// Type assertion for Firebase instance
+const typedDb: Database | null = db
 
 interface CheckoutFormProps {
   onSubmit: (details: BuyerDetails) => void
@@ -40,10 +44,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSubmit, loading = 
   // Load saved checkout details
   useEffect(() => {
     const loadCheckoutDetails = async () => {
-      if (!user || !db) return
+      if (!user || !typedDb) return
 
       try {
-        const userCheckoutRef = ref(db, `userCheckoutDetails/${user.uid}`)
+        const userCheckoutRef = ref(typedDb, `userCheckoutDetails/${user.uid}`)
         const snapshot = await get(userCheckoutRef)
         
         if (snapshot.exists()) {

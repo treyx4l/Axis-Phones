@@ -3,16 +3,22 @@ import {
   signInWithPopup,
   signOut,
   onAuthStateChanged,
-  User,
   updateProfile,
 } from 'firebase/auth'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth, googleProvider, storage } from '../FirebaseConfig'
+import type { Auth, GoogleAuthProvider as GoogleAuthProviderType, User } from 'firebase/auth'
+import type { FirebaseStorage } from 'firebase/storage'
 
 // Check if Firebase is properly configured
 if (!auth || !googleProvider) {
   console.warn('Firebase Auth is not configured. Please set up Firebase environment variables.');
 }
+
+// Type assertions for Firebase instances
+const typedAuth: Auth | null = auth
+const typedGoogleProvider: GoogleAuthProviderType | null = googleProvider
+const typedStorage: FirebaseStorage | null = storage
 
 interface UserProfile {
   displayName: string
@@ -38,12 +44,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!auth) {
+    if (!typedAuth) {
       setLoading(false)
       return
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(typedAuth, (user) => {
       setUser(user)
       if (user) {
         setUserProfile({
@@ -60,11 +66,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe()
   }, [])
 
-  const handleAuthError = (error: any, providerName: string) => {
-    console.error(`Error signing in with ${providerName}:`, error)
+  const handleAuthError = (error: unknown, providerName: string) => {
+    const err = error as any
+    console.error(`Error signing in with ${providerName}:`, err)
     
     // Handle specific error codes
-    if (error.code === 'auth/configuration-not-found') {
+    if (err.code === 'auth/configuration-not-found') {
       throw new Error(`Firebase Auth configuration not found. Please verify:\n` +
         `1. Your .env file has VITE_FIREBASE_AUTH_DOMAIN set correctly\n` +
         `2. The authDomain matches your Firebase project (format: project-id.firebaseapp.com)\n` +
@@ -72,43 +79,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         `4. ${providerName} sign-in is enabled in Firebase Console > Authentication > Sign-in method`)
     }
     
-    if (error.code === 'auth/operation-not-allowed') {
+    if (err.code === 'auth/operation-not-allowed') {
       throw new Error(`${providerName} sign-in is not enabled. Please enable it in Firebase Console > Authentication > Sign-in method.`)
     }
     
-    if (error.code === 'auth/popup-closed-by-user') {
-      throw error // Re-throw to allow silent handling
+    if (err.code === 'auth/popup-closed-by-user') {
+      throw err // Re-throw to allow silent handling
     }
     
-    if (error.code) {
-      throw new Error(`Authentication error: ${error.code}${error.message ? ` - ${error.message}` : ''}`)
+    if (err.code) {
+      throw new Error(`Authentication error: ${err.code}${err.message ? ` - ${err.message}` : ''}`)
     }
-    throw error
+    throw err
   }
 
   const signInWithGoogle = async () => {
-    if (!auth || !googleProvider) {
+    if (!typedAuth || !typedGoogleProvider) {
       throw new Error('Firebase Auth is not configured. Please set up your .env file with Firebase credentials.')
     }
     
-    if (!auth.app || !auth.app.options || !auth.app.options.authDomain) {
+    if (!typedAuth.app || !typedAuth.app.options || !typedAuth.app.options.authDomain) {
       throw new Error('Firebase Auth configuration is invalid. Please verify your .env file has correct VITE_FIREBASE_AUTH_DOMAIN and restart the dev server.')
     }
     
     try {
-      await signInWithPopup(auth, googleProvider)
-    } catch (error: any) {
-      handleAuthError(error, 'Google')
+      await signInWithPopup(typedAuth, typedGoogleProvider)
+    } catch (error: unknown) {
+      handleAuthError(error as any, 'Google')
     }
   }
 
 
   const logout = async () => {
-    if (!auth) {
+    if (!typedAuth) {
       throw new Error('Firebase Auth is not configured.')
     }
     try {
-      await signOut(auth)
+      await signOut(typedAuth)
     } catch (error) {
       console.error('Error signing out:', error)
       throw error
@@ -131,13 +138,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 
   const uploadProfilePicture = async (file: File): Promise<string> => {
-    if (!user || !storage) {
+    if (!user || !typedStorage) {
       throw new Error('User not logged in or Firebase Storage not configured')
     }
 
     try {
       // Create a reference to the file location
-      const fileRef = ref(storage, `profile-pictures/${user.uid}/${Date.now()}_${file.name}`)
+      const fileRef = ref(typedStorage, `profile-pictures/${user.uid}/${Date.now()}_${file.name}`)
       
       // Upload the file
       await uploadBytes(fileRef, file)

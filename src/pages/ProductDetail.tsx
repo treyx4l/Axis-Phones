@@ -20,7 +20,6 @@ import { useCart } from '../context/CartContext'
 import { formatCurrency } from '../utils/currency'
 import { ColorSwatch } from '../components/ColorSwatch'
 import { QuantityInput } from '../components/QuantityInput'
-import { Product } from '../types'
 
 export const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()

@@ -20,13 +20,16 @@ import {
   Select,
   MenuItem,
 } from '@mui/material'
-import { Save, PhotoCamera, Warning, Person, ShoppingCart, Lock, Delete as DeleteIcon } from '@mui/icons-material'
+import { Save, PhotoCamera, Warning, Person, ShoppingCart, Lock } from '@mui/icons-material'
 import { useAuth } from '../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
 import { useRef } from 'react'
 import { ref, get, set } from 'firebase/database'
 import { db } from '../FirebaseConfig'
 import { BuyerDetails } from '../types'
+import type { Database } from 'firebase/database'
+
+// Type assertion for Firebase instance
+const typedDb: Database | null = db
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -50,7 +53,6 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const Settings: React.FC = () => {
-  const navigate = useNavigate()
   const { user, userProfile, updateUserProfile, uploadProfilePicture } = useAuth()
   const [tabValue, setTabValue] = useState(0)
   const [displayName, setDisplayName] = useState(userProfile?.displayName || '')
@@ -75,10 +77,10 @@ export const Settings: React.FC = () => {
   // Load checkout details from Realtime Database
   useEffect(() => {
     const loadCheckoutDetails = async () => {
-      if (!user || !db) return
+      if (!user || !typedDb) return
 
       try {
-        const userCheckoutRef = ref(db, `userCheckoutDetails/${user.uid}`)
+        const userCheckoutRef = ref(typedDb, `userCheckoutDetails/${user.uid}`)
         const snapshot = await get(userCheckoutRef)
         
         if (snapshot.exists()) {
@@ -148,7 +150,7 @@ export const Settings: React.FC = () => {
     setMessage(null)
 
     try {
-      const downloadURL = await uploadProfilePicture(file)
+      await uploadProfilePicture(file)
       setMessage({ type: 'success', text: 'Profile picture updated successfully!' })
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
@@ -176,7 +178,7 @@ export const Settings: React.FC = () => {
   }
 
   const handleSaveCheckoutDetails = async () => {
-    if (!user || !db) {
+    if (!user || !typedDb) {
       setMessage({ type: 'error', text: 'User not logged in or database not available.' })
       return
     }
@@ -185,7 +187,7 @@ export const Settings: React.FC = () => {
     setMessage(null)
 
     try {
-      const userCheckoutRef = ref(db, `userCheckoutDetails/${user.uid}`)
+      const userCheckoutRef = ref(typedDb, `userCheckoutDetails/${user.uid}`)
       await set(userCheckoutRef, {
         ...checkoutDetails,
         updatedAt: new Date().toISOString(),

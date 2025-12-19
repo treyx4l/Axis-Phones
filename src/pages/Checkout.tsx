@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Container, Typography, Grid, Box, Alert } from '@mui/material'
+import { Container, Typography, Grid, Alert } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
@@ -7,7 +7,6 @@ import { useOrders } from '../context/OrdersContext'
 import { BuyerDetails, Order } from '../types'
 import { CheckoutForm } from '../components/CheckoutForm'
 import { CartSummary } from '../components/CartSummary'
-import { AuthPrompt } from '../components/AuthPrompt'
 import { initializePaystack, generatePaystackReference, convertToKobo } from '../utils/paystack'
 
 export const Checkout: React.FC = () => {
@@ -46,7 +45,7 @@ export const Checkout: React.FC = () => {
       const amountInKobo = convertToKobo(total)
 
       // Initialize Paystack payment
-      const paymentResponse = await initializePaystack({
+      await initializePaystack({
         key: paystackPublicKey,
         email: buyerDetails.email,
         amount: amountInKobo,

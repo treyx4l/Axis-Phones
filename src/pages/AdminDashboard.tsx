@@ -18,11 +18,9 @@ import {
   DialogActions,
   TextField,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
   Chip,
-  Alert,
   Grid,
   Tabs,
   Tab,
@@ -35,8 +33,11 @@ import { useProducts } from '../context/ProductsContext'
 import { useOrders } from '../context/OrdersContext'
 import { Product, ColorVariant, StorageOption, Order } from '../types'
 import { formatCurrency } from '../utils/currency'
-import { products as initialProducts } from '../data/products'
 import { db } from '../FirebaseConfig'
+import type { Database } from 'firebase/database'
+
+// Type assertion for Firebase instance
+const typedDb: Database | null = db
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate()
@@ -138,9 +139,9 @@ export const AdminDashboard: React.FC = () => {
     }
 
     try {
-      // Check if Firestore is initialized
-      if (!db) {
-        throw new Error('Firestore database is not initialized. Please check your Firebase configuration.')
+      // Check if Realtime Database is initialized
+      if (!typedDb) {
+        throw new Error('Realtime Database is not initialized. Please check your Firebase configuration.')
       }
 
       if (editingProduct) {

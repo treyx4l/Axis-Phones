@@ -1,9 +1,9 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics, isSupported } from "firebase/analytics";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getStorage } from "firebase/storage";
-import { getDatabase } from "firebase/database";
+import { initializeApp, FirebaseApp } from "firebase/app";
+import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
+import { getAuth, GoogleAuthProvider, Auth, GoogleAuthProvider as GoogleAuthProviderType } from "firebase/auth";
+import { getStorage, FirebaseStorage } from "firebase/storage";
+import { getDatabase, Database } from "firebase/database";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -19,7 +19,7 @@ const firebaseConfig = {
 };
 
 // Extract project ID from authDomain for validation
-const extractProjectIdFromAuthDomain = (authDomain) => {
+const extractProjectIdFromAuthDomain = (authDomain: string | undefined): string | null => {
   if (!authDomain) return null;
   const match = authDomain.match(/^([^.]+)\.firebaseapp\.com$/);
   return match ? match[1] : null;
@@ -63,8 +63,8 @@ if (import.meta.env.DEV) {
 }
 
 // Initialize Firebase only if configured
-let app;
-let analytics = null;
+let app: FirebaseApp | null = null;
+let analytics: Analytics | null = null;
 
 if (isFirebaseConfigured) {
   try {
@@ -74,7 +74,7 @@ if (isFirebaseConfigured) {
     // Initialize Analytics only in browser environment and if supported
     if (typeof window !== 'undefined') {
       isSupported().then((supported) => {
-        if (supported && firebaseConfig.measurementId) {
+        if (supported && firebaseConfig.measurementId && app) {
           analytics = getAnalytics(app);
         }
       }).catch(() => {
@@ -82,7 +82,7 @@ if (isFirebaseConfigured) {
         console.warn('Firebase Analytics not available');
       });
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Firebase initialization error:', error);
     // Create a minimal app object to prevent crashes
     app = null;
@@ -95,10 +95,10 @@ if (isFirebaseConfigured) {
 }
 
 // Initialize Firebase Auth only if app is initialized
-let auth = null;
-let googleProvider = null;
-let storage = null;
-let db = null;
+let auth: Auth | null = null;
+let googleProvider: GoogleAuthProviderType | null = null;
+let storage: FirebaseStorage | null = null;
+let db: Database | null = null;
 
 if (app) {
   try {
@@ -141,16 +141,18 @@ if (app) {
     } else {
       console.warn('Firebase Auth can only be initialized in browser environment');
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Firebase Auth initialization error:', error);
-    console.error('Error details:', {
-      code: error.code,
-      message: error.message,
-      authDomain: firebaseConfig.authDomain,
-      projectId: firebaseConfig.projectId,
-      appInitialized: !!app,
-      appOptions: app ? app.options : null
-    });
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        code: (error as any).code,
+        message: error.message,
+        authDomain: firebaseConfig.authDomain,
+        projectId: firebaseConfig.projectId,
+        appInitialized: !!app,
+        appOptions: app ? app.options : null
+      });
+    }
     auth = null;
     googleProvider = null;
     storage = null;
@@ -161,3 +163,4 @@ if (app) {
 // Export with fallbacks
 export { auth, googleProvider, storage, db, analytics };
 export default app;
+

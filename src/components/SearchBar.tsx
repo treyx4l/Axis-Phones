@@ -144,7 +144,7 @@ export const SearchBar: React.FC = () => {
                   Search Results ({searchResults.length})
                 </Typography>
                 <Grid container spacing={2}>
-                  {searchResults.map((product, index) => {
+                  {searchResults.map((product) => {
                     const minPrice = Math.min(...product.storageOptions.map((s) => s.price))
                     return (
                       <Grid item xs={12} sm={6} key={product.id}>

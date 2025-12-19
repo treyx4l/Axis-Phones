@@ -6,7 +6,6 @@ import {
   Typography,
   Box,
   Chip,
-  Fade,
   Grow,
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
