@@ -54,6 +54,7 @@ export interface Order {
   total: number
   createdAt: string
   status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+  paymentStatus?: 'pending' | 'paid' | 'failed'
   userId?: string
   userEmail?: string
 }

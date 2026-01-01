@@ -36,9 +36,11 @@ export const Checkout: React.FC = () => {
 
     try {
       const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
-      
+
       if (!paystackPublicKey) {
-        throw new Error('Paystack public key is not configured. Please set VITE_PAYSTACK_PUBLIC_KEY in your .env file.')
+        throw new Error(
+          'Paystack public key is not configured. Please set VITE_PAYSTACK_PUBLIC_KEY in your .env file.'
+        )
       }
 
       const reference = generatePaystackReference()
@@ -59,16 +61,16 @@ export const Checkout: React.FC = () => {
           buyer_name: buyerDetails.fullName,
           buyer_phone: buyerDetails.phone,
         },
-        callback: async (response) => {
+        callback: async response => {
           // Payment successful
           try {
             const orderId = response.reference || reference
-            
+
             // Verify user is still authenticated
             if (!user) {
               throw new Error('User session expired. Please sign in again.')
             }
-            
+
             // Create order object
             const order: Order = {
               id: orderId,
@@ -81,14 +83,15 @@ export const Checkout: React.FC = () => {
               total,
               createdAt: new Date().toISOString(),
               status: 'processing',
+              paymentStatus: 'paid',
             }
-            
+
             console.log('Attempting to save order:', order)
-            
+
             // Save order to database
             await addOrder(order)
             console.log('Order saved successfully')
-            
+
             clearCart()
             // Redirect to order confirmation page with order reference
             navigate(`/order-confirmation?reference=${orderId}`, { replace: true })
@@ -99,21 +102,24 @@ export const Checkout: React.FC = () => {
               code: orderError?.code,
               stack: orderError?.stack,
             })
-            
+
             // Provide more specific error message
-            let errorMessage = 'Payment successful but failed to save order. Please contact support.'
+            let errorMessage =
+              'Payment successful but failed to save order. Please contact support.'
             if (orderError?.message) {
               if (orderError.message.includes('not logged in')) {
-                errorMessage = 'Your session expired. Please sign in again and contact support with your payment reference.'
+                errorMessage =
+                  'Your session expired. Please sign in again and contact support with your payment reference.'
               } else if (orderError.message.includes('not initialized')) {
-                errorMessage = 'Database connection error. Please refresh the page and contact support if the issue persists.'
+                errorMessage =
+                  'Database connection error. Please refresh the page and contact support if the issue persists.'
               } else if (orderError.message.includes('Permission denied')) {
                 errorMessage = 'Permission error. Please ensure you are signed in and try again.'
               } else {
                 errorMessage = `Failed to save order: ${orderError.message}. Please contact support with reference: ${reference}`
               }
             }
-            
+
             setError(errorMessage)
             setLoading(false)
           }
@@ -126,7 +132,7 @@ export const Checkout: React.FC = () => {
     } catch (err) {
       console.error('Payment error:', err)
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during payment'
-      
+
       // Don't show error if user just closed the payment window
       if (errorMessage !== 'Payment window closed') {
         setError(errorMessage)
@@ -140,7 +146,6 @@ export const Checkout: React.FC = () => {
       <Typography variant="h4" component="h1" gutterBottom>
         Checkout
       </Typography>
-
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -160,4 +165,3 @@ export const Checkout: React.FC = () => {
     </Container>
   )
 }
-

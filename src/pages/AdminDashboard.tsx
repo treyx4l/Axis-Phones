@@ -25,8 +25,9 @@ import {
   Tabs,
   Tab,
   CircularProgress,
+  Divider,
 } from '@mui/material'
-import { Add, Edit, Delete, Logout, Inventory, ShoppingCart } from '@mui/icons-material'
+import { Add, Edit, Delete, Logout, Inventory, ShoppingCart, Visibility } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAdminAuth } from '../context/AdminAuthContext'
 import { useProducts } from '../context/ProductsContext'
@@ -42,12 +43,21 @@ const typedDb: Database | null = db
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate()
   const { logout } = useAdminAuth()
-  const { products, addProduct, updateProduct, deleteProduct, reloadProducts, loading: productsLoading } = useProducts()
+  const {
+    products,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    reloadProducts,
+    loading: productsLoading,
+  } = useProducts()
   const { getAllOrders, updateOrderStatus } = useOrders()
   const [tabValue, setTabValue] = useState(0)
   const [orders, setOrders] = useState<Order[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [openDialog, setOpenDialog] = useState(false)
+  const [openOrderDialog, setOpenOrderDialog] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [formData, setFormData] = useState<Partial<Product>>({
     model: '',
@@ -107,13 +117,11 @@ export const AdminDashboard: React.FC = () => {
 
     // Filter out empty storage options
     const validStorageOptions = formData.storageOptions.filter(
-      (so) => so.capacity && so.capacity.trim() !== ''
+      so => so.capacity && so.capacity.trim() !== ''
     )
 
     // Filter out empty color variants
-    const validColorVariants = formData.colorVariants.filter(
-      (cv) => cv.name && cv.name.trim() !== ''
-    )
+    const validColorVariants = formData.colorVariants.filter(cv => cv.name && cv.name.trim() !== '')
 
     if (validStorageOptions.length === 0) {
       alert('Please add at least one valid storage option')
@@ -126,7 +134,9 @@ export const AdminDashboard: React.FC = () => {
     }
 
     const productData: Product = {
-      id: editingProduct?.id || `iphone-${formData.model.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+      id:
+        editingProduct?.id ||
+        `iphone-${formData.model.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
       model: formData.model!,
       sku: formData.sku!,
       description: formData.description || '',
@@ -141,7 +151,9 @@ export const AdminDashboard: React.FC = () => {
     try {
       // Check if Realtime Database is initialized
       if (!typedDb) {
-        throw new Error('Realtime Database is not initialized. Please check your Firebase configuration.')
+        throw new Error(
+          'Realtime Database is not initialized. Please check your Firebase configuration.'
+        )
       }
 
       if (editingProduct) {
@@ -167,7 +179,9 @@ export const AdminDashboard: React.FC = () => {
         productData,
         dbInitialized: !!db,
       })
-      alert(`Failed to save product: ${errorMessage}\n\nPlease check:\n1. Your internet connection\n2. Firebase configuration\n3. Firestore database is enabled\n4. Browser console for more details`)
+      alert(
+        `Failed to save product: ${errorMessage}\n\nPlease check:\n1. Your internet connection\n2. Firebase configuration\n3. Firestore database is enabled\n4. Browser console for more details`
+      )
     }
   }
 
@@ -188,7 +202,11 @@ export const AdminDashboard: React.FC = () => {
     })
   }
 
-  const updateStorageOption = (index: number, field: keyof StorageOption, value: string | number) => {
+  const updateStorageOption = (
+    index: number,
+    field: keyof StorageOption,
+    value: string | number
+  ) => {
     const updated = [...(formData.storageOptions || [])]
     updated[index] = { ...updated[index], [field]: value }
     setFormData({ ...formData, storageOptions: updated })
@@ -267,6 +285,16 @@ export const AdminDashboard: React.FC = () => {
     }
   }
 
+  const handleViewOrder = (order: Order) => {
+    setSelectedOrder(order)
+    setOpenOrderDialog(true)
+  }
+
+  const handleCloseOrderDialog = () => {
+    setOpenOrderDialog(false)
+    setSelectedOrder(null)
+  }
+
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
@@ -295,11 +323,7 @@ export const AdminDashboard: React.FC = () => {
       {tabValue === 0 && (
         <>
           <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => handleOpenDialog()}
-            >
+            <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
               Add New Product
             </Button>
           </Box>
@@ -310,60 +334,60 @@ export const AdminDashboard: React.FC = () => {
             </Box>
           ) : (
             <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Model</TableCell>
-              <TableCell>SKU</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Stock</TableCell>
-              <TableCell>Colors</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {products.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell>{product.model}</TableCell>
-                <TableCell>{product.sku}</TableCell>
-                <TableCell>${product.basePrice}</TableCell>
-                <TableCell>{product.stock}</TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                    {product.colorVariants.slice(0, 3).map((color) => (
-                      <Chip
-                        key={color.name}
-                        label={color.name}
-                        size="small"
-                        sx={{ backgroundColor: color.hex, color: '#fff' }}
-                      />
-                    ))}
-                    {product.colorVariants.length > 3 && (
-                      <Chip label={`+${product.colorVariants.length - 3}`} size="small" />
-                    )}
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleOpenDialog(product)}
-                    color="primary"
-                  >
-                    <Edit />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDelete(product.id)}
-                    color="error"
-                  >
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Model</TableCell>
+                    <TableCell>SKU</TableCell>
+                    <TableCell>Price</TableCell>
+                    <TableCell>Stock</TableCell>
+                    <TableCell>Colors</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {products.map(product => (
+                    <TableRow key={product.id}>
+                      <TableCell>{product.model}</TableCell>
+                      <TableCell>{product.sku}</TableCell>
+                      <TableCell>${product.basePrice}</TableCell>
+                      <TableCell>{product.stock}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                          {product.colorVariants.slice(0, 3).map(color => (
+                            <Chip
+                              key={color.name}
+                              label={color.name}
+                              size="small"
+                              sx={{ backgroundColor: color.hex, color: '#fff' }}
+                            />
+                          ))}
+                          {product.colorVariants.length > 3 && (
+                            <Chip label={`+${product.colorVariants.length - 3}`} size="small" />
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDialog(product)}
+                          color="primary"
+                        >
+                          <Edit />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(product.id)}
+                          color="error"
+                        >
+                          <Delete />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
         </>
       )}
@@ -399,7 +423,7 @@ export const AdminDashboard: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    orders.map((order) => (
+                    orders.map(order => (
                       <TableRow key={order.id}>
                         <TableCell>{order.reference}</TableCell>
                         <TableCell>{order.buyerDetails.fullName}</TableCell>
@@ -408,9 +432,7 @@ export const AdminDashboard: React.FC = () => {
                           {order.items.reduce((sum, item) => sum + item.quantity, 0)} items
                         </TableCell>
                         <TableCell>{formatCurrency(order.total)}</TableCell>
-                        <TableCell>
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </TableCell>
+                        <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell>
                           <Chip
                             label={order.status || 'pending'}
@@ -419,18 +441,28 @@ export const AdminDashboard: React.FC = () => {
                           />
                         </TableCell>
                         <TableCell>
-                          <FormControl size="small" sx={{ minWidth: 120 }}>
-                            <Select
-                              value={order.status || 'pending'}
-                              onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleViewOrder(order)}
+                              color="primary"
+                              title="View Order Details"
                             >
-                              <MenuItem value="pending">Pending</MenuItem>
-                              <MenuItem value="processing">Processing</MenuItem>
-                              <MenuItem value="shipped">Shipped</MenuItem>
-                              <MenuItem value="delivered">Delivered</MenuItem>
-                              <MenuItem value="cancelled">Cancelled</MenuItem>
-                            </Select>
-                          </FormControl>
+                              <Visibility />
+                            </IconButton>
+                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                              <Select
+                                value={order.status || 'pending'}
+                                onChange={e => handleStatusChange(order.id, e.target.value)}
+                              >
+                                <MenuItem value="pending">Pending</MenuItem>
+                                <MenuItem value="processing">Processing</MenuItem>
+                                <MenuItem value="shipped">Shipped</MenuItem>
+                                <MenuItem value="delivered">Delivered</MenuItem>
+                                <MenuItem value="cancelled">Cancelled</MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))
@@ -451,7 +483,7 @@ export const AdminDashboard: React.FC = () => {
                 fullWidth
                 label="Model"
                 value={formData.model}
-                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                onChange={e => setFormData({ ...formData, model: e.target.value })}
                 required
               />
             </Grid>
@@ -460,7 +492,7 @@ export const AdminDashboard: React.FC = () => {
                 fullWidth
                 label="SKU"
                 value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                onChange={e => setFormData({ ...formData, sku: e.target.value })}
                 required
               />
             </Grid>
@@ -469,7 +501,7 @@ export const AdminDashboard: React.FC = () => {
                 fullWidth
                 label="Description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
                 multiline
                 rows={3}
               />
@@ -480,7 +512,9 @@ export const AdminDashboard: React.FC = () => {
                 label="Base Price"
                 type="number"
                 value={formData.basePrice}
-                onChange={(e) => setFormData({ ...formData, basePrice: parseFloat(e.target.value) || 0 })}
+                onChange={e =>
+                  setFormData({ ...formData, basePrice: parseFloat(e.target.value) || 0 })
+                }
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -489,7 +523,7 @@ export const AdminDashboard: React.FC = () => {
                 label="Stock"
                 type="number"
                 value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
+                onChange={e => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -498,7 +532,12 @@ export const AdminDashboard: React.FC = () => {
                 label="Release Year"
                 type="number"
                 value={formData.releaseYear}
-                onChange={(e) => setFormData({ ...formData, releaseYear: parseInt(e.target.value) || new Date().getFullYear() })}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    releaseYear: parseInt(e.target.value) || new Date().getFullYear(),
+                  })
+                }
               />
             </Grid>
             <Grid item xs={12}>
@@ -510,14 +549,16 @@ export const AdminDashboard: React.FC = () => {
                   <TextField
                     label="Capacity"
                     value={storage.capacity}
-                    onChange={(e) => updateStorageOption(index, 'capacity', e.target.value)}
+                    onChange={e => updateStorageOption(index, 'capacity', e.target.value)}
                     size="small"
                   />
                   <TextField
                     label="Price"
                     type="number"
                     value={storage.price}
-                    onChange={(e) => updateStorageOption(index, 'price', parseFloat(e.target.value) || 0)}
+                    onChange={e =>
+                      updateStorageOption(index, 'price', parseFloat(e.target.value) || 0)
+                    }
                     size="small"
                   />
                   <IconButton onClick={() => removeStorageOption(index)} color="error">
@@ -534,17 +575,20 @@ export const AdminDashboard: React.FC = () => {
                 Color Variants
               </Typography>
               {formData.colorVariants?.map((color, index) => (
-                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                <Box
+                  key={index}
+                  sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center', flexWrap: 'wrap' }}
+                >
                   <TextField
                     label="Color Name"
                     value={color.name}
-                    onChange={(e) => updateColorVariant(index, 'name', e.target.value)}
+                    onChange={e => updateColorVariant(index, 'name', e.target.value)}
                     size="small"
                   />
                   <TextField
                     label="Hex Code"
                     value={color.hex}
-                    onChange={(e) => updateColorVariant(index, 'hex', e.target.value)}
+                    onChange={e => updateColorVariant(index, 'hex', e.target.value)}
                     size="small"
                     type="color"
                     sx={{ width: 100 }}
@@ -552,7 +596,7 @@ export const AdminDashboard: React.FC = () => {
                   <TextField
                     label="Image URL (optional)"
                     value={color.imageUrl || ''}
-                    onChange={(e) => {
+                    onChange={e => {
                       const updated = [...(formData.colorVariants || [])]
                       updated[index] = { ...updated[index], imageUrl: e.target.value }
                       setFormData({ ...formData, colorVariants: updated })
@@ -575,7 +619,7 @@ export const AdminDashboard: React.FC = () => {
                 fullWidth
                 label="Image URL"
                 value={formData.images?.[0] || ''}
-                onChange={(e) => setFormData({ ...formData, images: [e.target.value] })}
+                onChange={e => setFormData({ ...formData, images: [e.target.value] })}
                 placeholder="https://example.com/image.jpg"
               />
             </Grid>
@@ -588,7 +632,172 @@ export const AdminDashboard: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Order Details Dialog */}
+      <Dialog open={openOrderDialog} onClose={handleCloseOrderDialog} maxWidth="md" fullWidth>
+        <DialogTitle>Order Details - {selectedOrder?.reference}</DialogTitle>
+        <DialogContent>
+          {selectedOrder && (
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  Order Information
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">
+                  Order Reference
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                  {selectedOrder.reference}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">
+                  Order Date
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                  {new Date(selectedOrder.createdAt).toLocaleString()}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">
+                  Order Status
+                </Typography>
+                <Chip
+                  label={selectedOrder.status || 'pending'}
+                  color={getStatusColor(selectedOrder.status) as any}
+                  size="small"
+                  sx={{ mt: 0.5 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">
+                  Payment Status
+                </Typography>
+                <Chip
+                  label={
+                    selectedOrder.paymentStatus === 'paid'
+                      ? 'Paid'
+                      : selectedOrder.paymentStatus === 'failed'
+                        ? 'Failed'
+                        : 'Pending'
+                  }
+                  color={
+                    selectedOrder.paymentStatus === 'paid'
+                      ? 'success'
+                      : selectedOrder.paymentStatus === 'failed'
+                        ? 'error'
+                        : 'warning'
+                  }
+                  size="small"
+                  sx={{ mt: 0.5 }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>
+                  Customer Information
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">
+                  Full Name
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                  {selectedOrder.buyerDetails.fullName}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">
+                  Email
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                  {selectedOrder.buyerDetails.email}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">
+                  Phone
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                  {selectedOrder.buyerDetails.phone}
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>
+                  Shipping Address
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="body1">{selectedOrder.buyerDetails.address.street}</Typography>
+                <Typography variant="body1">
+                  {selectedOrder.buyerDetails.address.city},{' '}
+                  {selectedOrder.buyerDetails.address.region}
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>
+                  Order Items
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+              </Grid>
+              {selectedOrder.items.map((item, index) => (
+                <Grid item xs={12} key={index}>
+                  <Paper sx={{ p: 2, mb: 1 }}>
+                    <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      {item.quantity}x {item.model}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Color: {item.color.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Storage: {item.storage.capacity}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>
+                      Price: {formatCurrency(item.price * item.quantity)}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              ))}
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>
+                  Order Summary
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+              </Grid>
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2">Subtotal:</Typography>
+                  <Typography variant="body2">{formatCurrency(selectedOrder.subtotal)}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2">Tax:</Typography>
+                  <Typography variant="body2">{formatCurrency(selectedOrder.tax)}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2">Shipping:</Typography>
+                  <Typography variant="body2">{formatCurrency(selectedOrder.shipping)}</Typography>
+                </Box>
+                <Divider sx={{ my: 1 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="h6">Total:</Typography>
+                  <Typography variant="h6">{formatCurrency(selectedOrder.total)}</Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseOrderDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   )
 }
-

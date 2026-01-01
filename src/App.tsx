@@ -37,13 +37,13 @@ function AppContent() {
             <Route path="/category" element={<Category />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
-            <Route 
-              path="/checkout" 
+            <Route
+              path="/checkout"
               element={
                 <ProtectedCheckoutRoute>
                   <Checkout />
                 </ProtectedCheckoutRoute>
-              } 
+              }
             />
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/settings" element={<Settings />} />
@@ -74,11 +74,26 @@ function AppContent() {
           <Container maxWidth="lg">
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
-                © 2024 AxisPhones. All rights reserved.
+                © 2025 AxisPhones. All rights reserved.
               </Typography>
-              <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Box
+                sx={{
+                  mt: 1,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 2,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <Typography variant="body2" color="text.secondary">
-                  Contact: support@axisphones.com
+                  Contact:{' '}
+                  <a
+                    href="mailto:axis.phones.gh@gmail.com"
+                    style={{ color: 'text.secondary', textDecoration: 'none' }}
+                  >
+                    axis.phones.gh@gmail.com
+                  </a>
                 </Typography>
                 <Button
                   variant="text"

@@ -41,9 +41,20 @@ export const AboutModal: React.FC<AboutModalProps> = ({ open, onClose }) => {
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Typography variant="body1" paragraph color="text.secondary">
             AxisPhones is a modern e-commerce platform for mobile devices.
+            <br /> Built with React, TypeScript, and Material-UI. Features a full product catalog,
+            shopping cart, checkout flow, and Paystack payment integration. This application
+            demonstrates best practices in frontend development, including state management,
+            authentication, and user experience design.
+            <br /> This was built by Axis Tech.
+            <br />
+            You can contact us at <br />
+            <a href="mailto:axistech.digital@gmail.com">axistech.digital@gmail.com</a>
+            <br />
+            Or visit our website at <br />
+            <a href="https://axis-tech.vercel.app/">https://axis-tech.vercel.app/</a>
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            © 2024 AxisPhones. All rights reserved.
+            © 2025 AxisPhones. All rights reserved.
           </Typography>
         </Box>
       </DialogContent>
@@ -53,4 +64,3 @@ export const AboutModal: React.FC<AboutModalProps> = ({ open, onClose }) => {
     </Dialog>
   )
 }
-
