@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext'
 import { AdminAuthProvider } from './context/AdminAuthContext'
 import { ProductsProvider } from './context/ProductsContext'
 import { OrdersProvider } from './context/OrdersContext'
+import { NotificationProvider } from './context/NotificationContext'
 import { Header } from './components/Header'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ProtectedCheckoutRoute } from './components/ProtectedCheckoutRoute'
@@ -28,7 +29,12 @@ function AppContent() {
   const [aboutOpen, setAboutOpen] = useState(false)
 
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <Header />
         <Box component="main" sx={{ flexGrow: 1 }}>
@@ -134,17 +140,19 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <AdminAuthProvider>
-          <ProductsProvider>
-            <OrdersProvider>
-              <CartProvider>
-                <AppContent />
-              </CartProvider>
-            </OrdersProvider>
-          </ProductsProvider>
-        </AdminAuthProvider>
-      </AuthProvider>
+      <NotificationProvider>
+        <AuthProvider>
+          <AdminAuthProvider>
+            <ProductsProvider>
+              <OrdersProvider>
+                <CartProvider>
+                  <AppContent />
+                </CartProvider>
+              </OrdersProvider>
+            </ProductsProvider>
+          </AdminAuthProvider>
+        </AuthProvider>
+      </NotificationProvider>
     </ThemeProvider>
   )
 }

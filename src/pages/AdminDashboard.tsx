@@ -32,8 +32,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAdminAuth } from '../context/AdminAuthContext'
 import { useProducts } from '../context/ProductsContext'
 import { useOrders } from '../context/OrdersContext'
+import { useNotification } from '../context/NotificationContext'
 import { Product, ColorVariant, StorageOption, Order } from '../types'
 import { formatCurrency } from '../utils/currency'
+import { checkRateLimit, RATE_LIMIT_CONFIGS } from '../utils/rateLimiter'
 import { db } from '../FirebaseConfig'
 import type { Database } from 'firebase/database'
 
@@ -42,7 +44,7 @@ const typedDb: Database | null = db
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate()
-  const { logout } = useAdminAuth()
+  const { logout, adminUser } = useAdminAuth()
   const {
     products,
     addProduct,
@@ -52,6 +54,7 @@ export const AdminDashboard: React.FC = () => {
     loading: productsLoading,
   } = useProducts()
   const { getAllOrders, updateOrderStatus } = useOrders()
+  const { showRateLimitError, showNotification } = useNotification()
   const [tabValue, setTabValue] = useState(0)
   const [orders, setOrders] = useState<Order[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
@@ -157,28 +160,41 @@ export const AdminDashboard: React.FC = () => {
       }
 
       if (editingProduct) {
+        // Check rate limit for update
+        const updateRateLimit = checkRateLimit({
+          ...RATE_LIMIT_CONFIGS.ADMIN_UPDATE_PRODUCT,
+          identifier: adminUser ? `admin:update:${adminUser.uid}` : 'admin:update',
+        })
+
+        if (!updateRateLimit.allowed) {
+          showRateLimitError(updateRateLimit.resetTime, 'updating products')
+          return
+        }
+
         await updateProduct(productData.id, productData)
-        alert('Product updated successfully!')
+        showNotification('Product updated successfully!', 'success')
         // Reload products to ensure UI is in sync
         await reloadProducts()
       } else {
-        console.log('Adding product:', productData)
+        // Check rate limit for add
+        const addRateLimit = checkRateLimit({
+          ...RATE_LIMIT_CONFIGS.ADMIN_ADD_PRODUCT,
+          identifier: adminUser ? `admin:add:${adminUser.uid}` : 'admin:add',
+        })
+
+        if (!addRateLimit.allowed) {
+          showRateLimitError(addRateLimit.resetTime, 'adding products')
+          return
+        }
+
         await addProduct(productData)
-        console.log('Product added successfully to Firestore')
         // Reload products to ensure UI is in sync
         await reloadProducts()
-        alert('Product added successfully!')
+        showNotification('Product added successfully!', 'success')
       }
       handleCloseDialog()
     } catch (error) {
-      console.error('Error saving product:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.error('Error details:', {
-        message: errorMessage,
-        error,
-        productData,
-        dbInitialized: !!db,
-      })
       alert(
         `Failed to save product: ${errorMessage}\n\nPlease check:\n1. Your internet connection\n2. Firebase configuration\n3. Firestore database is enabled\n4. Browser console for more details`
       )
@@ -187,10 +203,22 @@ export const AdminDashboard: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
+      // Check rate limit for delete
+      const deleteRateLimit = checkRateLimit({
+        ...RATE_LIMIT_CONFIGS.ADMIN_DELETE_PRODUCT,
+        identifier: adminUser ? `admin:delete:${adminUser.uid}` : 'admin:delete',
+      })
+
+      if (!deleteRateLimit.allowed) {
+        showRateLimitError(deleteRateLimit.resetTime, 'deleting products')
+        return
+      }
+
       try {
         await deleteProduct(id)
+        showNotification('Product deleted successfully!', 'success')
       } catch (error) {
-        alert('Failed to delete product. Please try again.')
+        showNotification('Failed to delete product. Please try again.', 'error')
       }
     }
   }
@@ -252,7 +280,7 @@ export const AdminDashboard: React.FC = () => {
       const allOrders = await getAllOrders()
       setOrders(allOrders)
     } catch (error) {
-      console.error('Error loading orders:', error)
+      // Error loading orders
     } finally {
       setOrdersLoading(false)
     }
@@ -263,7 +291,6 @@ export const AdminDashboard: React.FC = () => {
       await updateOrderStatus(orderId, newStatus)
       await loadOrders() // Reload orders
     } catch (error) {
-      console.error('Error updating order status:', error)
       alert('Failed to update order status')
     }
   }

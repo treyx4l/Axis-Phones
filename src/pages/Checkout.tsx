@@ -4,16 +4,20 @@ import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { useOrders } from '../context/OrdersContext'
+import { useNotification } from '../context/NotificationContext'
 import { BuyerDetails, Order } from '../types'
 import { CheckoutForm } from '../components/CheckoutForm'
 import { CartSummary } from '../components/CartSummary'
 import { initializePaystack, generatePaystackReference, convertToKobo } from '../utils/paystack'
+import { sendOrderNotification } from '../utils/notifications'
+import { checkRateLimit, RATE_LIMIT_CONFIGS } from '../utils/rateLimiter'
 
 export const Checkout: React.FC = () => {
   const navigate = useNavigate()
   const { items, getTotalPrice, clearCart } = useCart()
   const { user } = useAuth()
   const { addOrder } = useOrders()
+  const { showRateLimitError } = useNotification()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,6 +35,28 @@ export const Checkout: React.FC = () => {
   }
 
   const handleSubmit = async (buyerDetails: BuyerDetails) => {
+    // Check rate limit for checkout
+    const checkoutRateLimit = checkRateLimit({
+      ...RATE_LIMIT_CONFIGS.CHECKOUT,
+      identifier: user ? `checkout:${user.uid}` : 'checkout:guest',
+    })
+
+    if (!checkoutRateLimit.allowed) {
+      showRateLimitError(checkoutRateLimit.resetTime, 'checkout')
+      return
+    }
+
+    // Check rate limit for order creation
+    const orderRateLimit = checkRateLimit({
+      ...RATE_LIMIT_CONFIGS.CREATE_ORDER,
+      identifier: user ? `order:${user.uid}` : 'order:guest',
+    })
+
+    if (!orderRateLimit.allowed) {
+      showRateLimitError(orderRateLimit.resetTime, 'creating orders')
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -86,23 +112,16 @@ export const Checkout: React.FC = () => {
               paymentStatus: 'paid',
             }
 
-            console.log('Attempting to save order:', order)
-
             // Save order to database
             await addOrder(order)
-            console.log('Order saved successfully')
+
+            // Send notification for paid orders (with rate limiting)
+            await sendOrderNotification(order)
 
             clearCart()
             // Redirect to order confirmation page with order reference
             navigate(`/order-confirmation?reference=${orderId}`, { replace: true })
           } catch (orderError: any) {
-            console.error('Error saving order:', orderError)
-            console.error('Error details:', {
-              message: orderError?.message,
-              code: orderError?.code,
-              stack: orderError?.stack,
-            })
-
             // Provide more specific error message
             let errorMessage =
               'Payment successful but failed to save order. Please contact support.'
@@ -130,7 +149,6 @@ export const Checkout: React.FC = () => {
         },
       })
     } catch (err) {
-      console.error('Payment error:', err)
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during payment'
 
       // Don't show error if user just closed the payment window

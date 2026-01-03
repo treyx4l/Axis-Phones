@@ -48,7 +48,6 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
 
       return false
     } catch (error) {
-      console.error('Error checking admin status:', error)
       return false
     }
   }
@@ -91,7 +90,6 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
       setIsAuthenticated(true)
       setAdminUser(userCredential.user)
     } catch (error: unknown) {
-      console.error('Admin login error:', error)
       const err = error as any
       if (err.code === 'auth/user-not-found') {
         throw new Error('No account found with this email address.')
@@ -118,7 +116,6 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
       setIsAuthenticated(false)
       setAdminUser(null)
     } catch (error) {
-      console.error('Error signing out:', error)
       throw error
     }
   }

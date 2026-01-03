@@ -22,7 +22,7 @@ export const OrderConfirmation: React.FC = () => {
           const loadedOrder = await getOrderById(reference)
           setOrder(loadedOrder)
         } catch (error) {
-          console.error('Error loading order:', error)
+          // Error loading order
         } finally {
           setLoading(false)
         }

@@ -65,7 +65,6 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setLoading(false)
       },
       error => {
-        console.error('Error loading orders:', error)
         setOrders([])
         setLoading(false)
       }
@@ -102,30 +101,14 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         paymentStatus: order.paymentStatus || 'pending',
       }
 
-      console.log('Saving order to database:', {
-        reference: orderToSave.reference,
-        userId: orderToSave.userId,
-        total: orderToSave.total,
-        itemsCount: orderToSave.items?.length || 0,
-      })
-
       // Use the reference as the key to ensure uniqueness and easy lookup
       const orderRef = ref(typedDb, `orders/${order.reference || order.id}`)
       await set(orderRef, orderToSave)
-
-      console.log('Order saved successfully with reference:', order.reference || order.id)
 
       // Update local state
       const savedOrder = { ...order, id: order.reference || order.id }
       setOrders([savedOrder, ...orders])
     } catch (error: any) {
-      console.error('Error adding order to database:', error)
-      console.error('Error details:', {
-        code: error?.code,
-        message: error?.message,
-        stack: error?.stack,
-      })
-
       // Provide more specific error information
       if (error?.code === 'PERMISSION_DENIED') {
         throw new Error(
@@ -180,7 +163,7 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
       }
     } catch (error) {
-      console.error('Error fetching order by ID:', error)
+      // Error fetching order - return undefined
     }
 
     return undefined
@@ -215,7 +198,6 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       return allOrders
     } catch (error: any) {
-      console.error('Error loading all orders:', error)
       throw error
     }
   }
@@ -247,10 +229,7 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       setOrders(
         orders.map(order => (order.id === orderId ? { ...order, status: status as any } : order))
       )
-
-      console.log('Order status updated:', orderId, status)
     } catch (error: any) {
-      console.error('Error updating order status:', error)
       throw error
     }
   }

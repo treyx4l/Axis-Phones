@@ -70,7 +70,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSubmit, loading = 
           }))
         }
       } catch (error) {
-        console.error('Error loading checkout details:', error)
+        // Error loading checkout details
       }
     }
 

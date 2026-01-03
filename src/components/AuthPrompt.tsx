@@ -2,6 +2,7 @@ import React from 'react'
 import { Alert, AlertTitle, Button } from '@mui/material'
 import { Login } from '@mui/icons-material'
 import { useAuth } from '../context/AuthContext'
+import { useNotification } from '../context/NotificationContext'
 
 interface AuthPromptProps {
   message?: string
@@ -13,15 +14,21 @@ export const AuthPrompt: React.FC<AuthPromptProps> = ({
   action = 'Sign In',
 }) => {
   const { signInWithGoogle } = useAuth()
+  const { showNotification } = useNotification()
 
   const handleSignIn = async () => {
     try {
       await signInWithGoogle()
+      showNotification('Signed in successfully!', 'success')
     } catch (error: any) {
-      console.error('Sign in failed:', error)
-      // Only show alert if it's not a popup-closed error
+      // Only show notification if it's not a popup-closed error
       if (error.code !== 'auth/popup-closed-by-user' && error.message) {
-        alert(`Sign in failed: ${error.message}`)
+        // Check if it's a rate limit error
+        if (error.message.includes('Too many sign-in attempts')) {
+          showNotification(error.message, 'warning', 8000)
+        } else {
+          showNotification(`Sign in failed: ${error.message}`, 'error')
+        }
       }
     }
   }

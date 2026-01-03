@@ -48,13 +48,7 @@ export const mockPaystack = async (orderData: OrderData): Promise<PaystackRespon
   const redirectUrl = import.meta.env.VITE_PAYSTACK_REDIRECT_URL || '/order-confirmation'
   const checkoutUrl = `${redirectUrl}?reference=${reference}`
 
-  // Log order data (in production, save to database)
-  console.log('Order created:', {
-    reference,
-    total: orderData.total,
-    items: orderData.items.length,
-    buyer: orderData.buyerDetails.email,
-  })
+  // Order data would be saved to database in production
 
   return {
     reference,

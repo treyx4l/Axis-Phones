@@ -38,29 +38,7 @@ const isFirebaseConfigured = firebaseConfig.projectId &&
   firebaseConfig.authDomain !== "" &&
   projectIdMatches;
 
-// Debug: Log configuration status (only in development)
-if (import.meta.env.DEV) {
-  console.log('Firebase Config Check:', {
-    hasProjectId: !!firebaseConfig.projectId,
-    hasApiKey: !!firebaseConfig.apiKey,
-    hasAuthDomain: !!firebaseConfig.authDomain,
-    projectId: firebaseConfig.projectId ? firebaseConfig.projectId.substring(0, 10) + '...' : 'missing',
-    apiKey: firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 10) + '...' : 'missing',
-    authDomain: firebaseConfig.authDomain || 'missing',
-    authDomainProjectId: authDomainProjectId || 'N/A',
-    projectIdMatches: projectIdMatches,
-    isConfigured: isFirebaseConfigured
-  });
-
-  if (!projectIdMatches && firebaseConfig.authDomain && firebaseConfig.projectId) {
-    console.warn('⚠️ Project ID mismatch detected!', {
-      configuredProjectId: firebaseConfig.projectId,
-      authDomainProjectId: authDomainProjectId,
-      authDomain: firebaseConfig.authDomain,
-      message: 'The project ID in VITE_FIREBASE_PROJECT_ID should match the project ID in VITE_FIREBASE_AUTH_DOMAIN'
-    });
-  }
-}
+// Configuration validation (silent)
 
 // Initialize Firebase only if configured
 let app: FirebaseApp | null = null;
@@ -69,28 +47,24 @@ let analytics: Analytics | null = null;
 if (isFirebaseConfigured) {
   try {
     app = initializeApp(firebaseConfig);
-    console.log('Firebase initialized successfully');
 
     // Initialize Analytics only in browser environment and if supported
-    if (typeof window !== 'undefined') {
+    // Skip analytics in development (localhost) to avoid errors
+    if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
       isSupported().then((supported) => {
         if (supported && firebaseConfig.measurementId && app) {
           analytics = getAnalytics(app);
         }
       }).catch(() => {
         // Analytics not supported or failed to initialize
-        console.warn('Firebase Analytics not available');
       });
     }
   } catch (error: unknown) {
-    console.error('Firebase initialization error:', error);
-    // Create a minimal app object to prevent crashes
+    // Firebase initialization error - app remains null
     app = null;
   }
 } else {
-  console.warn('Firebase configuration is missing. Please set environment variables in .env file.');
-  console.warn('Required variables: VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_API_KEY');
-  // Create a dummy config to prevent crashes
+  // Firebase configuration is missing
   app = null;
 }
 
@@ -114,7 +88,6 @@ if (app) {
 
       // Verify authDomain is set in the app options
       if (!auth.app.options.authDomain) {
-        console.error('Firebase Auth: authDomain is missing from app options');
         throw new Error('Firebase Auth configuration is incomplete: authDomain is missing');
       }
 
@@ -129,30 +102,10 @@ if (app) {
       // Initialize Realtime Database
       if (firebaseConfig.databaseURL) {
         db = getDatabase(app);
-        console.log('Firebase Realtime Database initialized successfully');
-      } else {
-        console.warn('Firebase Realtime Database URL not found. Please set VITE_FIREBASE_DATABASE_URL in your .env file.');
       }
-
-      console.log('Firebase Auth initialized successfully', {
-        authDomain: auth.app.options.authDomain,
-        projectId: auth.app.options.projectId
-      });
-    } else {
-      console.warn('Firebase Auth can only be initialized in browser environment');
     }
   } catch (error: unknown) {
-    console.error('Firebase Auth initialization error:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', {
-        code: (error as any).code,
-        message: error.message,
-        authDomain: firebaseConfig.authDomain,
-        projectId: firebaseConfig.projectId,
-        appInitialized: !!app,
-        appOptions: app ? app.options : null
-      });
-    }
+    // Firebase Auth initialization error
     auth = null;
     googleProvider = null;
     storage = null;

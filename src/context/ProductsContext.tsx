@@ -59,15 +59,12 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
           loadedProducts.sort((a, b) => a.model.localeCompare(b.model))
         }
         
-        console.log(`Loaded ${loadedProducts.length} products from Realtime Database`)
         setProducts(loadedProducts)
         setLoading(false)
       }, (error) => {
-        console.error('Error loading products:', error)
         setLoading(false)
       })
       } catch (error: unknown) {
-        console.error('Error setting up products listener:', error)
         setLoading(false)
       }
     }
@@ -85,7 +82,6 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const reloadProducts = async () => {
     if (!typedDb) {
-      console.warn('Realtime Database not initialized')
       return
     }
 
@@ -108,9 +104,8 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
       
       setProducts(loadedProducts)
-      console.log('Products reloaded:', loadedProducts.length)
     } catch (error: any) {
-      console.error('Error reloading products:', error)
+      // Error reloading products
     } finally {
       setLoading(false)
     }
@@ -118,12 +113,10 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const addProduct = async (product: Product) => {
     if (!typedDb) {
-      console.error('Realtime Database db is not initialized')
       throw new Error('Realtime Database not initialized. Please check your Firebase configuration.')
     }
 
     try {
-      console.log('Preparing to add product to Realtime Database:', product)
       const productsRef = ref(typedDb, 'products')
       const { id, ...productData } = product
       
@@ -142,23 +135,13 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
         updatedAt: new Date().toISOString(),
       }
       
-      console.log('Saving product to Realtime Database:', productToSave)
-      
       // Push new product (generates unique key)
       const newProductRef = push(productsRef)
       await set(newProductRef, productToSave)
       
-      const newProductId = newProductRef.key
-      console.log('Product saved with ID:', newProductId)
-      
       // Reload products to ensure consistency
       await reloadProducts()
-      console.log('Products reloaded after adding new product')
     } catch (error: any) {
-      console.error('Error adding product to Realtime Database:', error)
-      console.error('Error code:', error?.code)
-      console.error('Error message:', error?.message)
-      
       // Provide more specific error messages
       if (error?.code === 'PERMISSION_DENIED') {
         throw new Error('Permission denied. Please check your Realtime Database security rules.')
@@ -186,9 +169,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       // Update local state
       setProducts(products.map((p) => (p.id === id ? product : p)))
-      console.log('Product updated successfully:', id)
     } catch (error: any) {
-      console.error('Error updating product:', error)
       throw error
     }
   }
@@ -204,9 +185,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
       
       // Update local state
       setProducts(products.filter((p) => p.id !== id))
-      console.log('Product deleted successfully:', id)
     } catch (error: any) {
-      console.error('Error deleting product:', error)
       throw error
     }
   }

@@ -53,7 +53,7 @@ export const Header: React.FC = () => {
       await logout()
       handleMenuClose()
     } catch (error) {
-      console.error('Logout failed:', error)
+      // Logout failed silently
     }
   }
 

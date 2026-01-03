@@ -7,13 +7,11 @@ import {
 } from 'firebase/auth'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth, googleProvider, storage } from '../FirebaseConfig'
+import { checkRateLimit, RATE_LIMIT_CONFIGS } from '../utils/rateLimiter'
 import type { Auth, GoogleAuthProvider as GoogleAuthProviderType, User } from 'firebase/auth'
 import type { FirebaseStorage } from 'firebase/storage'
 
-// Check if Firebase is properly configured
-if (!auth || !googleProvider) {
-  console.warn('Firebase Auth is not configured. Please set up Firebase environment variables.');
-}
+// Check if Firebase is properly configured (silent check)
 
 // Type assertions for Firebase instances
 const typedAuth: Auth | null = auth
@@ -68,7 +66,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const handleAuthError = (error: unknown, providerName: string) => {
     const err = error as any
-    console.error(`Error signing in with ${providerName}:`, err)
     
     // Handle specific error codes
     if (err.code === 'auth/configuration-not-found') {
@@ -102,6 +99,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw new Error('Firebase Auth configuration is invalid. Please verify your .env file has correct VITE_FIREBASE_AUTH_DOMAIN and restart the dev server.')
     }
     
+    // Check rate limit for sign-in
+    const signInRateLimit = checkRateLimit({
+      ...RATE_LIMIT_CONFIGS.SIGN_IN,
+      identifier: 'signin:global',
+    })
+
+    if (!signInRateLimit.allowed) {
+      const resetDate = new Date(signInRateLimit.resetTime)
+      const timeUntilReset = Math.max(0, Math.ceil((signInRateLimit.resetTime - Date.now()) / 1000 / 60))
+      let message = 'Too many sign-in attempts. '
+      if (timeUntilReset > 0) {
+        message += `Please try again in ${timeUntilReset} minute${timeUntilReset > 1 ? 's' : ''}.`
+      } else {
+        message += 'Please try again shortly.'
+      }
+      throw new Error(message)
+    }
+    
     try {
       await signInWithPopup(typedAuth, typedGoogleProvider)
     } catch (error: unknown) {
@@ -117,7 +132,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await signOut(typedAuth)
     } catch (error) {
-      console.error('Error signing out:', error)
       throw error
     }
   }
@@ -131,7 +145,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       })
       setUserProfile((prev) => (prev ? { ...prev, ...data } : null))
     } catch (error) {
-      console.error('Error updating profile:', error)
       throw error
     }
   }
@@ -160,7 +173,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       return downloadURL
     } catch (error) {
-      console.error('Error uploading profile picture:', error)
       throw error
     }
   }

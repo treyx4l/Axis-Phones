@@ -103,7 +103,7 @@ export const Settings: React.FC = () => {
           }))
         }
       } catch (error) {
-        console.error('Error loading checkout details:', error)
+        // Error loading checkout details
       }
     }
 
@@ -193,8 +193,8 @@ export const Settings: React.FC = () => {
         updatedAt: new Date().toISOString(),
       })
       setMessage({ type: 'success', text: 'Checkout details saved successfully!' })
-    } catch (error) {
-      console.error('Error saving checkout details:', error)
+      } catch (error) {
+        // Error saving checkout details
       setMessage({ type: 'error', text: 'Failed to save checkout details. Please try again.' })
     } finally {
       setLoadingCheckout(false)

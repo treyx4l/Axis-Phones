@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react'
 import { CartItem } from '../types'
+import { checkRateLimit, RATE_LIMIT_CONFIGS } from '../utils/rateLimiter'
+import { useNotification } from './NotificationContext'
 
 type CartAction =
   | { type: 'ADD_ITEM'; payload: CartItem }
@@ -81,6 +83,7 @@ const initialState: CartState = {
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState)
+  const { showRateLimitError, showNotification } = useNotification()
 
   useEffect(() => {
     const savedCart = localStorage.getItem('cart')
@@ -89,7 +92,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const items = JSON.parse(savedCart)
         dispatch({ type: 'LOAD_CART', payload: items })
       } catch (error) {
-        console.error('Failed to load cart from localStorage', error)
+        // Failed to load cart from localStorage
       }
     }
   }, [])
@@ -99,7 +102,19 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [state.items])
 
   const addItem = (item: CartItem) => {
+    // Check rate limit
+    const rateLimitCheck = checkRateLimit({
+      ...RATE_LIMIT_CONFIGS.ADD_TO_CART,
+      identifier: 'cart:add',
+    })
+
+    if (!rateLimitCheck.allowed) {
+      showRateLimitError(rateLimitCheck.resetTime, 'adding items to cart')
+      return
+    }
+
     dispatch({ type: 'ADD_ITEM', payload: item })
+    showNotification('Item added to cart!', 'success', 3000)
   }
 
   const removeItem = (productId: string) => {
