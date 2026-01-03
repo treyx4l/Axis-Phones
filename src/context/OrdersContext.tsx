@@ -64,7 +64,7 @@ export const OrdersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setOrders(loadedOrders)
         setLoading(false)
       },
-      error => {
+      _error => {
         setOrders([])
         setLoading(false)
       }

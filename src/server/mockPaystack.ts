@@ -36,7 +36,7 @@ interface PaystackResponse {
  *   }
  * }
  */
-export const mockPaystack = async (orderData: OrderData): Promise<PaystackResponse> => {
+export const mockPaystack = async (_orderData: OrderData): Promise<PaystackResponse> => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1000))
 

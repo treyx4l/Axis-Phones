@@ -106,7 +106,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     })
 
     if (!signInRateLimit.allowed) {
-      const resetDate = new Date(signInRateLimit.resetTime)
       const timeUntilReset = Math.max(0, Math.ceil((signInRateLimit.resetTime - Date.now()) / 1000 / 60))
       let message = 'Too many sign-in attempts. '
       if (timeUntilReset > 0) {

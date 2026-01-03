@@ -16,7 +16,6 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const [currentNotification, setCurrentNotification] = useState<Notification | null>(null)
 
@@ -41,7 +40,6 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   }
 
   const showRateLimitError = (resetTime: number, operation: string) => {
-    const resetDate = new Date(resetTime)
     const timeUntilReset = Math.max(0, Math.ceil((resetTime - Date.now()) / 1000 / 60)) // minutes
     
     let message = `Rate limit exceeded for ${operation}. `
@@ -60,7 +58,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     showNotification(message, 'warning', 8000)
   }
 
-  const handleClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+  const handleClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === 'clickaway') {
       return
     }
@@ -79,7 +77,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
         onClose={handleClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        {currentNotification && (
+        {currentNotification ? (
           <Alert
             onClose={handleClose}
             severity={currentNotification.severity}
@@ -88,7 +86,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
           >
             {currentNotification.message}
           </Alert>
-        )}
+        ) : undefined}
       </Snackbar>
     </NotificationContext.Provider>
   )

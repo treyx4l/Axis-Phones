@@ -61,7 +61,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
         
         setProducts(loadedProducts)
         setLoading(false)
-      }, (error) => {
+      }, (_error) => {
         setLoading(false)
       })
       } catch (error: unknown) {
